@@ -46,7 +46,7 @@ SELECT TOP 1 FACULTY.id, FACULTY.faculty_name, COUNT(STUD.id) FROM FACULTY
 JOIN HOURS ON FACULTY.id = HOURS.faculty_id
 JOIN PROCESS ON HOURS.id = PROCESS.hours_id
 JOIN STUD ON PROCESS.stud_id = STUD.id
-WHERE YEAR(STUD.in_date) = '2015'
+WHERE YEAR(STUD.in_date) = 2015
 GROUP BY FACULTY.id, FACULTY.faculty_name
 
 /* Задание JOIN 7 */
@@ -55,7 +55,7 @@ SELECT FACULTY.id, FACULTY.faculty_name, FORM.form_name, COUNT(STUD.id) FROM FAC
 JOIN HOURS ON FACULTY.id = HOURS.faculty_id
 JOIN PROCESS ON HOURS.id = PROCESS.hours_id
 JOIN STUD ON PROCESS.stud_id = STUD.id
-WHERE YEAR(STUD.in_date) = '2014'
+WHERE YEAR(STUD.in_date) = 2014
 GROUP BY FACULTY.id, FACULTY.faculty_name
 
 /* Задание JOIN 8 */
@@ -117,7 +117,7 @@ JOIN HOURS ON FACULTY.id = HOURS.faculty_id
 JOIN PROCESS ON HOURS.id = PROCESS.hours_id
 JOIN STUD ON PROCESS.stud_id = STUD.id
 WHERE DATEDIFF(YEAR, STUD.br_date, GETDATE()) > 45
-GROUP BY FACULTY.id, FACULTY.faculty_name
+GROUP BY FACULTY.id, FACULTY.faculty_name, FORM.form_name
 
 /* Задание JOIN 15 */
 
@@ -126,7 +126,7 @@ JOIN HOURS ON FACULTY.id = HOURS.faculty_id
 JOIN PROCESS ON HOURS.id = PROCESS.hours_id
 JOIN STUD ON PROCESS.stud_id = STUD.id
 WHERE DATEDIFF(YEAR, STUD.br_date, GETDATE()) < 27
-GROUP BY FACULTY.id, FACULTY.faculty_name
+GROUP BY FACULTY.id, FACULTY.faculty_name, HOURS.course, FORM.form_name
 
 /* Задание JOIN 16 */
 
@@ -188,8 +188,80 @@ JOIN HOURS ON FACULTY.id = HOURS.faculty_id
 JOIN PROCESS ON HOURS.id = PROCESS.hours_id
 JOIN STUD ON PROCESS.stud_id = STUD.id
 JOIN FORM ON HOURS.form_id = FORM.id
-GROUP BY FACULTY.id, FACULTY.faculty_name
+GROUP BY FACULTY.id, FACULTY.faculty_name, FORM.form_name
 HAVING MIN(STUD.exm) > 6
 
 /* Задание SELECT 7 */
 
+SELECT STUD.id, STUD.f_name, STUD.s_name, STUD.last_name, HOURS.course, FORM.form_name,(HOURS.all_h - HOURS.inclass_h) as time FROM STUD
+JOIN PROCESS ON STUD.id = PROCESS.stud_id
+JOIN HOURS ON PROCESS.hours_id = HOURS.id
+JOIN FACULTY ON HOURS.faculty_id = FACULTY.id
+JOIN FORM ON HOURS.form_id = FORM.id
+WHERE FACULTY.faculty_name = 'ФПК' AND HOURS.course = 3 AND FORM.form_name = 'Заочная'
+
+/* Задание SELECT 8 */
+
+SELECT FACULTY.faculty_name, HOURS.course, FORM.form_name, (HOURS.all_h - HOURS.inclass_h) as time FROM FACULTY
+JOIN HOURS ON FACULTY.id = HOURS.faculty_id
+JOIN FORM ON HOURS.form_id = FORM.id
+JOIN PROCESS ON HOURS.id = PROCESS.hours_id
+JOIN STUD ON PROCESS.stud_id = STUD.id
+WHERE (HOURS.all_h - HOURS.inclass_h) > 150
+GROUP BY FACULTY.faculty_name, HOURS.course, FORM.form_name, (HOURS.all_h - HOURS.inclass_h)
+
+/* Задание SELECT 9 */
+
+SELECT TEACH.id, TEACH.last_name, TEACH.f_name, TEACH.s_name, COUNT(SUBJ.id) as SUBJECT FROM TEACH
+JOIN WORK ON TEACH.id = WORK.teach_id
+JOIN SUBJ ON WORK.subj_id = SUBJ.id
+GROUP BY TEACH.id, TEACH.last_name, TEACH.f_name, TEACH.s_name
+
+/* Задание SELECT 10 */
+
+SELECT FACULTY.id, FACULTY.faculty_name, COUNT(DISTINCT TEACH.id) as teachers FROM FACULTY
+JOIN HOURS ON FACULTY.id = HOURS.faculty_id
+JOIN WORK ON HOURS.id = WORK.hours_id
+JOIN TEACH ON WORK.teach_id = TEACH.id
+GROUP BY FACULTY.id, FACULTY.faculty_name
+
+/* Задание SELECT 11 */
+
+SELECT SUBJ.id, SUBJ.subj, MAX(SUBJ.hours) FROM SUBJ
+GROUP BY SUBJ.id, SUBJ.subj
+
+/* Задание SELECT 12 */
+
+SELECT TEACH.id, TEACH.last_name, TEACH.f_name, TEACH.s_name, COUNT(DISTINCT SUBJ.id) as subject FROM TEACH
+JOIN WORK ON TEACH.id = WORK.teach_id
+JOIN SUBJ ON WORK.subj_id = SUBJ.id
+GROUP BY TEACH.id, TEACH.last_name, TEACH.f_name, TEACH.s_name
+HAVING COUNT(DISTINCT SUBJ.id) > 1
+
+/* Задание SELECT 13 */
+
+SELECT FACULTY.id, FACULTY.faculty_name, HOURS.course, SUM(SUBJ.hours) as hours FROM FACULTY
+JOIN HOURS ON FACULTY.id = HOURS.faculty_id
+JOIN WORK ON HOURS.id = WORK.hours_id
+JOIN SUBJ ON WORK.subj_id = SUBJ.id
+GROUP BY FACULTY.id, FACULTY.faculty_name, HOURS.course
+
+/* Задание SELECT 14 */
+
+SELECT FACULTY.id, FACULTY.faculty_name, HOURS.course, COUNT(DISTINCT SUBJ.id) as subject FROM FACULTY
+JOIN HOURS ON FACULTY.id = HOURS.faculty_id
+JOIN WORK ON HOURS.id = WORK.hours_id
+JOIN SUBJ ON WORK.subj_id = SUBJ.id
+WHERE HOURS.course = 2
+GROUP BY FACULTY.id, FACULTY.faculty_name, HOURS.course
+ORDER BY FACULTY.faculty_name DESC, HOURS.course ASC
+
+/* Задание SELECT 15 */
+
+SELECT FACULTY.id, FACULTY.faculty_name, COUNT(DISTINCT SUBJ.id) as subject FROM FACULTY
+JOIN HOURS ON FACULTY.id = HOURS.faculty_id
+JOIN WORK ON HOURS.id = WORK.hours_id
+JOIN TEACH ON WORK.teach_id = TEACH.id
+JOIN SUBJ ON WORK.subj_id = SUBJ.id
+WHERE TEACH.last_name IS NULL OR TEACH.last_name = ''
+GROUP BY FACULTY.id, FACULTY.faculty_name
