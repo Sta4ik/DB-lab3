@@ -376,8 +376,8 @@ WHERE STUD.last_name IS NULL OR STUD.last_name = ''
 
 SELECT TEACH.id, TEACH.s_name, TEACH.f_name, TEACH.last_name, SUM(SUBJ.hours),
        CASE 
-           WHEN SUM(SUBJ.hours) > 450 THEN '20%'
-           WHEN SUM(SUBJ.hours) > 300 THEN '10%'
+           WHEN SUM(SUBJ.hours) >= 450 THEN '20%'
+           WHEN SUM(SUBJ.hours) >= 300 THEN '10%'
            ELSE '0%'
        END 
 FROM TEACH
