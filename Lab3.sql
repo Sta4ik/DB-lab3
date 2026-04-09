@@ -144,7 +144,7 @@ JOIN HOURS ON FACULTY.id = HOURS.faculty_id
 JOIN PROCESS ON HOURS.id = PROCESS.hours_id
 JOIN STUD ON PROCESS.stud_id = STUD.id
 JOIN FORM ON HOURS.form_id = FORM.id
-WHERE FORM.form_name='Заочная'
+WHERE FORM.form_name = 'Заочная'
 GROUP BY FACULTY.id, FACULTY.faculty_name
 
 /* Задание SELECT 2 */
@@ -265,3 +265,163 @@ JOIN TEACH ON WORK.teach_id = TEACH.id
 JOIN SUBJ ON WORK.subj_id = SUBJ.id
 WHERE TEACH.last_name IS NULL OR TEACH.last_name = ''
 GROUP BY FACULTY.id, FACULTY.faculty_name
+
+/* Задание подзапрос 1 */
+
+SELECT STUD.id, STUD.f_name, STUD.s_name, STUD.last_name, STUD.exm FROM STUD
+WHERE STUD.exm <= (SELECT MAX(STUD.exm) * 0.8 FROM STUD)
+
+/* Задание подзапрос 2 */
+
+SELECT STUD.id, STUD.f_name, STUD.s_name, STUD.last_name, STUD.exm FROM STUD
+WHERE STUD.exm = (SELECT MAX(STUD.exm) FROM STUD)
+
+/* Задание подзапрос 3 */
+
+SELECT STUD.last_name FROM STUD
+JOIN PROCESS ON STUD.id = PROCESS.stud_id
+JOIN HOURS ON PROCESS.hours_id = HOURS.id
+JOIN FACULTY ON HOURS.faculty_id = FACULTY.id
+WHERE FACULTY.id = ( SELECT TOP 1 FACULTY.id
+                     FROM FACULTY
+                     JOIN HOURS ON FACULTY.id = HOURS.faculty_id
+                     JOIN PROCESS ON HOURS.id = PROCESS.hours_id
+                     JOIN STUD ON PROCESS.stud_id = STUD.id
+                     GROUP BY FACULTY.id
+                     ORDER BY COUNT(STUD.id) DESC )
+
+/* Задание подзапрос 8 */
+
+SELECT STUD.f_name, STUD.last_name, STUD.s_name, (SELECT  ) FROM PROCESS
+JOIN STUD ON PROCESS.stud_id = STUD.id
+JOIN HOURS ON PROCESS.hours_id = HOURS.id
+JOIN FACULTY ON HOURS.faculty_id = FACULTY.id
+JOIN FORM ON HOURS.form_id = FORM.id
+WHERE STUD.last_name IS NULL OR STUD.last_name = ''
+
+/* Задание UNION 2 */
+
+SELECT STUD.s_name, IIF(STUD.last_name IS NULL OR STUD.last_name = '', 'Иностранное', 'РБ') FROM STUD
+GROUP BY STUD.s_name, STUD.last_name
+UNION
+SELECT TEACH.s_name, IIF(TEACH.last_name IS NULL OR TEACH.last_name = '', 'Иностранное', 'РБ') FROM TEACH
+GROUP BY TEACH.s_name, TEACH.last_name
+
+/* Задание UNION 3 */
+
+SELECT TEACH.id, TEACH.f_name, TEACH.s_name, TEACH.last_name FROM TEACH
+JOIN WORK ON TEACH.id = WORK.teach_id
+JOIN HOURS ON WORK.hours_id = HOURS.id
+JOIN FACULTY ON HOURS.faculty_id = FACULTY.id
+WHERE FACULTY.faculty_name = 'ФПК'
+	INTERSECT
+SELECT TEACH.id, TEACH.f_name, TEACH.s_name, TEACH.last_name FROM TEACH
+JOIN WORK ON TEACH.id = WORK.teach_id
+JOIN HOURS ON WORK.hours_id = HOURS.id
+JOIN FACULTY ON HOURS.faculty_id = FACULTY.id
+WHERE FACULTY.faculty_name = 'ФПМ'
+
+/* Задание UNION 4 */
+
+SELECT TEACH.id, TEACH.f_name, TEACH.s_name, TEACH.last_name FROM TEACH
+JOIN WORK ON TEACH.id = WORK.teach_id
+JOIN HOURS ON WORK.hours_id = HOURS.id
+JOIN FACULTY ON HOURS.faculty_id = FACULTY.id
+WHERE FACULTY.faculty_name = 'ФПК'
+	EXCEPT
+SELECT TEACH.id, TEACH.f_name, TEACH.s_name, TEACH.last_name FROM TEACH
+JOIN WORK ON TEACH.id = WORK.teach_id
+JOIN HOURS ON WORK.hours_id = HOURS.id
+JOIN FACULTY ON HOURS.faculty_id = FACULTY.id
+WHERE FACULTY.faculty_name = 'ФПМ'
+
+/* Задание UNION 5 */
+
+SELECT 'Студентов', COUNT(STUD.id) FROM STUD
+UNION
+SELECT 'Преподавателей', COUNT(TEACH.id) FROM TEACH
+UNION
+SELECT 'Всего человек', ((SELECT COUNT(STUD.id) FROM STUD) + (SELECT COUNT(TEACH.id) FROM TEACH))
+
+/* Задание VIEW 1 */
+
+CREATE VIEW FPKSTUD AS
+	SELECT STUD.last_name, STUD.f_name, STUD.s_name, HOURS.course, FORM.form_name FROM STUD
+	JOIN PROCESS ON PROCESS.stud_id = STUD.id
+	JOIN HOURS ON HOURS.id = PROCESS.hours_id
+	JOIN FACULTY ON FACULTY.id = HOURS.faculty_id
+	JOIN FORM ON FORM.id = HOURS.form_id
+	WHERE FACULTY.faculty_name = 'ФПК'
+
+
+CREATE VIEW HOURSZAO AS
+	SELECT FACULTY.faculty_name, HOURS.course, HOURS.all_h FROM HOURS
+	JOIN FACULTY ON FACULTY.id = HOURS.faculty_id
+	JOIN FORM ON FORM.id = HOURS.form_id
+	WHERE FORM.form_name = 'Заочная'
+	GROUP BY FACULTY.faculty_name, HOURS.course, HOURS.all_h
+
+CREATE VIEW STUDMORE8 AS
+SELECT FACULTY.faculty_name, HOURS.course, FORM.form_name, COUNT(STUD.id) FROM STUD
+	JOIN PROCESS ON PROCESS.stud_id = STUD.id
+	JOIN HOURS ON HOURS.id = PROCESS.hours_id
+	JOIN FACULTY ON FACULTY.id = HOURS.faculty_id
+	JOIN FORM ON FORM.id = HOURS.form_id
+	WHERE STUD.exm > 8
+	GROUP BY FACULTY.faculty_name, HOURS.course, FORM.form_name
+
+CREATE VIEW STUDLESS6 AS
+SELECT STUD.f_name, STUD.s_name, STUD.last_name, FACULTY.faculty_name, HOURS.course, FORM.form_name, STUD.exm FROM STUD
+	JOIN PROCESS ON PROCESS.stud_id = STUD.id
+	JOIN HOURS ON HOURS.id = PROCESS.hours_id
+	JOIN FACULTY ON FACULTY.id = HOURS.faculty_id
+	JOIN FORM ON FORM.id = HOURS.form_id
+	WHERE STUD.exm < 6
+	GROUP BY STUD.f_name, STUD.s_name, STUD.last_name, FACULTY.faculty_name, HOURS.course, FORM.form_name
+
+/* Задание VIEW 2
+Все созданные view являются только для чтения, так как модифицирующие как минимум создаются из одной базовой таблицы без JOIN */
+
+/* Задание по функциям 1 */
+
+GO
+CREATE FUNCTION ForeignerInfo(@last_name NVARCHAR(30))
+	RETURNS NVARCHAR(20)
+AS
+BEGIN
+	IF (@last_name IS NULL OR @last_name = '')
+		RETURN 'Иностранец'
+	ELSE
+		RETURN 'Гражданин'
+END
+GO
+
+/* Задание по функциям 2 */
+
+GO
+CREATE FUNCTION HoursTeach()
+	RETURNS TABLE
+AS
+RETURN (SELECT TEACH.last_name, SUM(SUBJ.hours) FROM WORK
+			JOIN TEACH ON TEACH.id = WORK.teach_id
+			JOIN SUBJ ON SUBJ.id = WORK.subj_id
+			GROUP BY TEACH.last_name )
+GO
+
+/* Задание по процедурам 1 */
+
+GO
+CREATE PROCEDURE AmountStud @faculty_name NVARCHAR(10), @form_name NVARCHAR(15)
+AS
+BEGIN
+	SELECT FACULTY.id, FACULTY.faculty_name, FORM.form_name, COUNT(STUD.id) FROM FACULTY 
+	JOIN HOURS ON FACULTY.id = HOURS.faculty_id
+	JOIN PROCESS ON HOURS.id = PROCESS.hours_id
+	JOIN STUD ON PROCESS.stud_id = STUD.id
+	WHERE FORM.form_name = @form_name AND FACULTY.faculty_name = @faculty_name
+	GROUP BY FACULTY.id, FACULTY.faculty_name, FORM.form_name
+END
+GO
+
+/* Задание по процедурам 2 */
+
